@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # 	Common varibales for the OCF Resource Agents supplied by
 # 	heartbeat.

@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 #
 # 	Common helper functions for the OCF Resource Agents supplied by
@@ -180,7 +181,7 @@ set_logtag() {
 		if [ -n "$OCF_RESOURCE_INSTANCE" ]; then
 			HA_LOGTAG="$__SCRIPT_NAME($OCF_RESOURCE_INSTANCE)[$$]"
 		else
-			HA_LOGTAG="$__SCRIPT_NAME[$$]"
+			HA_LOGTAG="${__SCRIPT_NAME[$$]}"
 		fi
 	fi
 }
@@ -189,12 +190,12 @@ __ha_log() {
 	local ignore_stderr=false
 	local loglevel
 
-	[ "x$1" = "x--ignore-stderr" ] && ignore_stderr=true && shift
+	[ "$1" = "--ignore-stderr" ] && ignore_stderr=true && shift
 
 	[ none = "$HA_LOGFACILITY" ] && HA_LOGFACILITY=""
 	# if we're connected to a tty, then output to stderr
 	if tty >/dev/null; then
-		if [ "x$HA_debug" = "x0" -a "x$loglevel" = xdebug ] ; then
+    if [ "$HA_debug" = "0" ] && [ "$loglevel" = debug ] ; then
 			return 0
 		elif [ "$ignore_stderr" = "true" ]; then
 			# something already printed this error to stderr, so ignore
@@ -210,9 +211,8 @@ __ha_log() {
 
 	set_logtag
 
-	if [ "x${HA_LOGD}" = "xyes" ] ; then 
-		ha_logger -t "${HA_LOGTAG}" "$@"
-		if [ "$?" -eq "0" ] ; then
+	if [ "${HA_LOGD}" = "yes" ] ; then 
+		if ha_logger -t "${HA_LOGTAG}" "$@"; then
 			return 0
 		fi
 	fi
@@ -228,13 +228,13 @@ __ha_log() {
             *WARN*)		loglevel=warning;;
             *INFO*|info)	loglevel=info;;
 	  esac
-	  logger -t "$HA_LOGTAG" -p ${HA_LOGFACILITY}.${loglevel} "${*}"
+	  logger -t "$HA_LOGTAG" -p "${HA_LOGFACILITY}.${loglevel}" "${*}"
         fi	
         if
 	  [ -n "$HA_LOGFILE" ]
 	then
-	  : appending to $HA_LOGFILE
-	  echo `hadate`" $HA_LOGTAG:    ${*}" >> $HA_LOGFILE
+	  : appending to "$HA_LOGFILE"
+	  echo "$(hadate) $HA_LOGTAG:    ${*}" >> "$HA_LOGFILE"
 	fi
 	if
 	  [ -z "$HA_LOGFACILITY" -a -z "$HA_LOGFILE" ] && ! [ "$ignore_stderr" = "true" ]
@@ -259,7 +259,7 @@ ha_log()
 
 ha_debug() {
 
-        if [ "x${HA_debug}" = "x0" ] || [ -z "${HA_debug}" ] ; then
+        if [ "${HA_debug}" = "0" ] || [ -z "${HA_debug}" ] ; then
                 return 0
         fi
 	if tty >/dev/null; then
@@ -1104,9 +1104,9 @@ ocf_promotion_score() {
 	ocf_version_cmp "$OCF_RESKEY_crm_feature_set" "3.10.0"
 	res=$?
 	if [ $res -eq 2 ] || [ $res -eq 1 ] || ! have_binary "crm_master"; then
-		${HA_SBIN_DIR}/crm_attribute -p ${OCF_RESOURCE_INSTANCE} $@
+		"${HA_SBIN_DIR}/crm_attribute" -p "${OCF_RESOURCE_INSTANCE}" "$@"
 	else
-		${HA_SBIN_DIR}/crm_master -l reboot $@
+		"${HA_SBIN_DIR}/crm_master" -l reboot "$@"
 	fi
 }
 
